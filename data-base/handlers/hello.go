@@ -22,5 +22,5 @@ func (h *Hello) ServerHttp(w http.ResponseWriter, r *http.Request){
   if err != nil{
     http.Error(w,"oops",http.StatusBadRequest)
   }
-  fmt.Println(w,d)
+  fmt.Fprintf(w,"Hello %s",d)
 }
