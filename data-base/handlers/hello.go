@@ -18,9 +18,9 @@ func NewHello(l *log.Logger) *Hello{
 func (h *Hello) ServerHttp(w http.ResponseWriter, r *http.Request){
   
   h.l.Println("hello")
-  d, err := ioutil.ReadAll(r.Body)
+  b, err := ioutil.ReadAll(r.Body)
   if err != nil{
     http.Error(w,"oops",http.StatusBadRequest)
   }
-  fmt.Fprintf(w,"Hello %s",d)
+  fmt.Fprintf(w,"Hello %s",b)
 }
