@@ -5,6 +5,7 @@ import (
   "io/ioutil"
   "log"
   "net/http"
+
 )
 
 type Hello struct {
@@ -15,7 +16,7 @@ func NewHello(l *log.Logger) *Hello{
   return &Hello{l}
 }
 
-func (h *Hello) ServerHttp(w http.ResponseWriter, r *http.Request){
+func (h *Hello) ServerHTTP(w http.ResponseWriter, r *http.Request){
   
   h.l.Println("hello")
   b, err := ioutil.ReadAll(r.Body)
