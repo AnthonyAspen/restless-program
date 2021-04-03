@@ -2,4 +2,7 @@ module main
 
 go 1.16
 
-require github.com/squeezesky/restless-program v0.0.0-20210403062020-85e7d4212479
+require (
+	gorm.io/driver/mysql v1.0.5
+	gorm.io/gorm v1.21.6
+)

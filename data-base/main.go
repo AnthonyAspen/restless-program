@@ -1,20 +1,50 @@
 package main 
 
 import (
-  "github.com/squeezesky/restless-program/data-base/handlers"
   "log"
   "net/http"
   "os"
+  "os/signal"
+  "time"
+  "context"
 )
 
 func main(){
-  l := log.New(os.Stdout,"product-api",log.LstdFlags)
 
-  hh := handlers.NewHello(l)
+  l := log.New(os.Stdout,"orders-api",log.LstdFlags)
   
+  //create a server Mux
   sm := http.NewServeMux()
-  sm.Handle("/",hh)
 
-  http.ListenAndServe(":8080",nil)
+  //create a server handler
+  handler := NewHandler(l)
+  // use just created handler
+  sm.Handle("/",handler)
 
+  // create my server with my configuratiion and Mux, also don't forget about timeouts
+  server := &http.Server{
+    Addr: ":8080",
+    Handler: sm,
+    IdleTimeout: 120*time.Second,
+    ReadTimeout: 1*time.Second,
+    WriteTimeout: 1*time.Second,
+  }
+  // 
+  go func(){ 
+    err := server.ListenAndServe()
+    if err != nil{
+      l.Fatal(err)
+    }
+  }()
+
+  sigChan := make(chan os.Signal)
+  signal.Notify(sigChan,os.Interrupt)
+  signal.Notify(sigChan,os.Kill)
+  
+  sig := <-sigChan
+  l.Println("Received terminate, graceful shutdown",sig)
+
+  timeOutContext,_ := context.WithTimeout(context.Background(),30*time.Second)
+
+  server.Shutdown(timeOutContext)
 }
