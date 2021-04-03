@@ -32,6 +32,13 @@ type Product struct {
   Code  string `json:"code"`
   Price uint `json:"price"`
 }
+// struct to get information about an order by id of order
+type InfoOrderProduct struct {
+  OrderID uint 
+  ProductID uint
+  Code string
+  Price uint
+}
   
 
 func connectToDataBase()(db *gorm.DB,err error){
@@ -41,6 +48,14 @@ func connectToDataBase()(db *gorm.DB,err error){
     return nil,err
   }
   return db,nil
+}
+func getInfoOrderById(orderID uint)(infoOrderProduct []*InfoOrderProduct,err error){
+  db,err := connectToDataBase()
+  if err != nil{
+    return nil,err
+  }
+  db.Model(&OrderProduct{}).Select("order_products.order_id,order_products.product_id,products.code,products.price").Where("Order_id=?",orderID).Joins("join products on products.id = order_products.product_id").Scan(&infoOrderProduct)
+  return infoOrderProduct,nil
 }
 
 func getProducts() (product []*Product,err error){
