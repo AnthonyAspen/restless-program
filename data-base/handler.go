@@ -8,6 +8,7 @@ import (
   "strings"
 )
 
+// an useful struct to create a logger. It helps to make the dependencies with clear logic of handlers
 type Handler struct {
   l *log.Logger
 }
@@ -16,6 +17,7 @@ func NewHandler(l *log.Logger) *Handler{
   return &Handler{l}
 }
 
+// this is a main handler, it will give other handlers depend of a method(request)
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
   if r.Method == http.MethodGet{
     url := r.URL.Path
@@ -63,6 +65,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
 }
 }
 
+// a handler to delete an order by Id
 func deleteOrderByIdHandler(OrderId uint,w http.ResponseWriter, r *http.Request){
      err := deleteOrder(OrderId)
      if err != nil{
@@ -70,6 +73,7 @@ func deleteOrderByIdHandler(OrderId uint,w http.ResponseWriter, r *http.Request)
      }
 
 }
+/// a handler to get an order by id 
 func getOrderByIdHandler(OrderId uint,w http.ResponseWriter, r *http.Request){
      lp,err := getInfoOrderById(OrderId)
      if err != nil{
@@ -81,7 +85,7 @@ func getOrderByIdHandler(OrderId uint,w http.ResponseWriter, r *http.Request){
       }
       w.Write(lp_json)
 }
-// handler to get information about every order 
+// handler to get information about every order, if client didn't give any information about orders and used a method get. It's like a default response by a server
 func getEveryOrderHandler(w http.ResponseWriter, r *http.Request){
   lp,err := getProducts()
   if err != nil{

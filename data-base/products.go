@@ -8,6 +8,7 @@ import (
 
 
 
+// I use the Model instead of default gorm.Model because I'd like to change gorm and json names of columns
   type Model struct {
     ID        uint       `gorm:"primary_key auto_increment:true;column:id" json:"id"`
  CreatedAt time.Time  `gorm:"column:created_at" json:"created_at"`
@@ -25,7 +26,7 @@ type Order struct {
 }
 type OrderProduct struct {
   OrderID uint   `json:"order_id"`        // orderProduct has Order Id and Product Id
-  ProductID uint `json:"product_id"`
+  ProductID uint `json:"product_id"`      
 }
 type Product struct {
   Model

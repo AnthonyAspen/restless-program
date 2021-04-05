@@ -16,7 +16,7 @@ func main(){
   //create a server Mux
   sm := http.NewServeMux()
 
-  //create a server handler
+  //create a server handler what contains many other handlers (handlers.go)
   handler := NewHandler(l)
   // use just created handler
   sm.Handle("/",handler)
@@ -29,7 +29,7 @@ func main(){
     ReadTimeout: 1*time.Second,
     WriteTimeout: 1*time.Second,
   }
-  // 
+  // if the program will receive an os signal to kill or interrupt it will "gracefully" shutdown and won't be just killed
   go func(){ 
     err := server.ListenAndServe()
     if err != nil{
