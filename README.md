@@ -1,6 +1,6 @@
 # restless-program
 
-this is a version of https://github.com/squeezesky/project-gorm-order program. But I have placed it in a separately because the methods in main classes are completely 
+this is a version of https://github.com/squeezesky/project-gorm-order program. But I have placed it separately because the methods in main classes are completely 
 different it these programs and also I like this version more,than the first one.
 
 
