@@ -44,17 +44,36 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request){
   }
   
   if r.Method == http.MethodDelete{
-    //TODO code to delete an order
+    url := r.URL.Path
+    if url == "/"{
+    // if url doesn't contain any id then get every order
+     getEveryOrderHandler(w,r)
+    }  else {
+    // otherwise get an order info by id
+      tmp := strings.Trim(url,"/")
+      orderIdConv,err := strconv.ParseUint(tmp,10,64)
+      if err != nil{
+        http.Error(w,"failed to convert URL Path in uint",http.StatusInternalServerError)
+      }
+      deleteOrderByIdHandler(uint(orderIdConv),w,r)
     return
   }
      
   
 }
+}
 
+func deleteOrderByIdHandler(OrderId uint,w http.ResponseWriter, r *http.Request){
+     err := deleteOrder(OrderId)
+     if err != nil{
+        http.Error(w,"failed to delete an Order Info by Id",http.StatusInternalServerError)
+     }
+
+}
 func getOrderByIdHandler(OrderId uint,w http.ResponseWriter, r *http.Request){
      lp,err := getInfoOrderById(OrderId)
      if err != nil{
-        http.Error(w,"failed to get Order Info by Id",http.StatusInternalServerError)
+        http.Error(w,"failed to get an Order Info by Id",http.StatusInternalServerError)
      }
      lp_json,err := json.Marshal(lp)
      if err != nil{

@@ -40,7 +40,7 @@ type InfoOrderProduct struct {
   Price uint
 }
   
-
+//func to connect to a database 
 func connectToDataBase()(db *gorm.DB,err error){
   dsn := "root:root@tcp(127.0.0.1:3306)/Orders?charset=utf8mb4&parseTime=True&loc=Local"
   db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
@@ -49,6 +49,7 @@ func connectToDataBase()(db *gorm.DB,err error){
   }
   return db,nil
 }
+// get a products by id 
 func getInfoOrderById(orderID uint)(infoOrderProduct []*InfoOrderProduct,err error){
   db,err := connectToDataBase()
   if err != nil{
@@ -57,7 +58,7 @@ func getInfoOrderById(orderID uint)(infoOrderProduct []*InfoOrderProduct,err err
   db.Model(&OrderProduct{}).Select("order_products.order_id,order_products.product_id,products.code,products.price").Where("Order_id=?",orderID).Joins("join products on products.id = order_products.product_id").Scan(&infoOrderProduct)
   return infoOrderProduct,nil
 }
-
+// get all products
 func getProducts() (product []*Product,err error){
   db,err := connectToDataBase()
   if err != nil{
@@ -66,4 +67,27 @@ func getProducts() (product []*Product,err error){
  db.Model(&Product{}).Select("*").Scan(&product)
   return product,nil
 }
+// add new products in an order
+func addProdcut(orderId uint,productId uint) (err error) {
+  db,err := connectToDataBase()
+  if err != nil{
+    return err
+  }
+  orderProduct := OrderProduct{OrderID: orderId, ProductID: productId}
+  result := db.Create(&orderProduct)
+  if result.Error != nil{
+    return result.Error
+  }
+  return nil 
+}
+// delete an order 
+func deleteOrder(orderId uint)(err error){
+  db,err := connectToDataBase()
+  if err != nil{
+    return err
+  }
+  db.Delete(&Order{},orderId)
+  db.Delete(&OrderProduct{}).Where("order_id=?",orderId)
 
+  return nil
+}
