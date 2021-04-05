@@ -1,5 +1,9 @@
 # restless-program
 
+this is a version of https://github.com/squeezesky/project-gorm-order program. But I have placed it in a separately because the methods in main classes are completely 
+different it these programs and also I like this version more,than the first one.
+
+
 for the moment the program contains only data-base directory. It's the main directory for the server's part in the restless service,
 it takes request from a client and gives a response depends of a request method and context.
 Also it's a restless program, therefore it'll answer in JSON format. But I'm not sure yet about requests, for example if a client wants to delete an order probably
