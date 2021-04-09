@@ -7,6 +7,11 @@ import (
 )
 
 
+//struct for a database connection
+
+type dbConnection struct {
+  DB *gorm.DB
+}
 
 // I use the Model instead of default gorm.Model because I'd like to change gorm and json names of columns
   type Model struct {
@@ -69,7 +74,7 @@ func getProducts() (product []*Product,err error){
   return product,nil
 }
 // add new products in an order
-func addProdcut(orderId uint,productId uint) (err error) {
+func addProduct(orderId uint,productId uint) (err error) {
   db,err := connectToDataBase()
   if err != nil{
     return err
@@ -87,8 +92,7 @@ func deleteOrder(orderId uint)(err error){
   if err != nil{
     return err
   }
-  db.Delete(&Order{},orderId)
-  db.Delete(&OrderProduct{}).Where("order_id=?",orderId)
+  db.Delete(&OrderProduct{},orderId)
 
   return nil
 }
