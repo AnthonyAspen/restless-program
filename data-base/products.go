@@ -4,6 +4,10 @@ import (
   "gorm.io/gorm"
   "gorm.io/driver/mysql"
   "time"
+  "strconv"
+  "net/http"
+  "io/ioutil"
+  "log"
 )
 
 
@@ -37,6 +41,7 @@ type Product struct {
   Model
   Code  string `json:"code"`
   Price uint `json:"price"`
+  Amount uint
 }
 // struct to get information about an order by id of order
 type InfoOrderProduct struct {
@@ -57,13 +62,30 @@ func connectToDataBase()(db *gorm.DB,err error){
 }
 // get a products by id 
 func getInfoOrderById(orderID uint)(infoOrderProduct []*InfoOrderProduct,err error){
+  // amount 
+  orderIdStr:= strconv.FormatUint(uint64(orderID),10)
+  str  := "localhost:8090/"+orderIdStr
+  resp,err := http.Get(str)
+  if err != nil{
+    return nil,err
+  }
+  defer resp.Body.Close()
+  body,err := ioutil.ReadAll(resp.Body)
+  if err != nil {
+    return nil,err
+  }
+  log.Println(string(body)) 
+
   db,err := connectToDataBase()
   if err != nil{
     return nil,err
   }
+
   db.Model(&OrderProduct{}).Select("order_products.order_id,order_products.product_id,products.code,products.price").Where("Order_id=?",orderID).Joins("join products on products.id = order_products.product_id").Scan(&infoOrderProduct)
+
   return infoOrderProduct,nil
 }
+
 // get all products
 func getProducts() (product []*Product,err error){
   db,err := connectToDataBase()
