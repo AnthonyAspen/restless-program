@@ -4,10 +4,11 @@ import (
   "gorm.io/gorm"
   "gorm.io/driver/mysql"
   "time"
-  "strconv"
+/*  "strconv"
   "net/http"
-  "io/ioutil"
+  "io/ioutil" */
   "log"
+  "github.com/streadway/amqp"
 )
 
 
@@ -62,28 +63,77 @@ func connectToDataBase()(db *gorm.DB,err error){
 }
 // get a products by id 
 func getInfoOrderById(orderID uint)(infoOrderProduct []*InfoOrderProduct,err error){
-  // amount 
-  orderIdStr:= strconv.FormatUint(uint64(orderID),10)
-  str  := "localhost:8090/"+orderIdStr
-  resp,err := http.Get(str)
-  if err != nil{
-    return nil,err
-  }
-  defer resp.Body.Close()
-  body,err := ioutil.ReadAll(resp.Body)
-  if err != nil {
-    return nil,err
-  }
-  log.Println(string(body)) 
-
   db,err := connectToDataBase()
   if err != nil{
     return nil,err
   }
 
   db.Model(&OrderProduct{}).Select("order_products.order_id,order_products.product_id,products.code,products.price").Where("Order_id=?",orderID).Joins("join products on products.id = order_products.product_id").Scan(&infoOrderProduct)
+  log.Printf("requesting amount of %v",orderID)
+  getAmountOfProduct(orderID)
+
 
   return infoOrderProduct,nil
+}
+func getAmountOfProduct(orderId uint)(response []byte,err error){
+  conn,err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+  if err != nil{
+    log.Fatalf("error to connect: %s", err)
+  }
+  defer conn.Close()
+
+  channel, err := conn.Channel()
+  if err != nil{
+    log.Fatalf("error to open a channel: %s", err)
+  }
+  defer channel.Close()
+
+  q, err := channel.QueueDeclare(
+    "",  //name
+    false,  //durable
+    false,  // delete when unused
+    true,  // exclusive
+    false, //noWait
+    nil,  //arguments
+  )
+  if err != nil {
+    log.Fatalf("failed to declare a queue: %s",err)
+  }
+        msgs, err := channel.Consume(
+                q.Name, // queue
+                "",     // consumer
+                true,   // auto-ack
+                false,  // exclusive
+                false,  // no-local
+                false,  // no-wait
+                nil,    // args
+        )
+  if err != nil {
+    log.Fatalf("failed to register a consumer: %s",err)
+  }
+  err = channel.Publish(
+    "",
+    "rpc_queue",
+    false,
+    false,
+    amqp.Publishing{
+       ContentType:   "text/plain",
+       CorrelationId: "",  //TODO should type something here 
+       ReplyTo:       q.Name,
+       Body:          response,
+                })
+                if err != nil{
+    log.Fatalf("failed to publish a message: %s",err)
+                }
+                for d := range msgs{
+                  res := d.Body
+                  break
+
+                  log.Printf("the response in a for:  %s", res)
+                }
+
+        log.Fatalf("got a response %s", response)
+      return 
 }
 
 // get all products
