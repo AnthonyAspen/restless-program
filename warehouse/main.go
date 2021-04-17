@@ -3,12 +3,10 @@ package main
 import (
   "gorm.io/driver/postgres"
   "gorm.io/gorm"
-  "net/http"
   "log"
-  "strings"
-  "strconv"
   "encoding/json"
   "time"
+  "github.com/streadway/amqp"
 )
 func connectToDataBase()(db *gorm.DB,err error){
   dsn := "host=localhost user=postgres password=123 dbname=warehouse port=5432 sslmode=disable"
@@ -20,7 +18,7 @@ func connectToDataBase()(db *gorm.DB,err error){
 }
 
   type Model struct {
- ID        uint       `gorm:"primary_key auto_increment:true;column:id" json:"-"`
+ ID        uint       `gorm:"primary_key auto_increment:true;column:id" json:"id"`
  CreatedAt time.Time  `gorm:"column:created_at" json:"-"`
  UpdatedAt time.Time  `gorm:"column:updated_at" json:"-"`
  DeletedAt *time.Time `gorm:"column:deleted_at" json:"-"`
@@ -31,42 +29,65 @@ type Product struct {
 
 }
 // a method to get product amount 
-func getProductAmount(orderId uint)(product []*Product,err error){
+
+
+func getProductAmount()(product []*Product,err error){
 
  db,err := connectToDataBase()
   if err != nil {
     return nil,err
   }
-  db.Model(&Product{}).Select("products.amount").Where("id=?",orderId).Scan(&product)
+  db.Model(&Product{}).Select("products.id,products.amount").Scan(&product)
   if db.Error != nil {
     return nil, db.Error
   }
   return product,nil
 }
 
-func productHandler(w http.ResponseWriter, r *http.Request){
-  url := r.URL.Path
-  if url == "/"{
-    http.Error(w,"You didn't write any product's id",http.StatusBadRequest)
-    return 
+func main (){
+  conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+  if err != nil {
+    log.Fatal(err)
+  }
+  channel,err := conn.Channel()
+  if err != nil{
+    log.Fatal(err)
+  }
+  defer channel.Close()
+  q, err := channel.QueueDeclare(
+    "amount",
+    false,
+    false,
+    false,
+    false,
+    nil,
+  )
+  if err != nil{
+    log.Fatal(err)
   }
 
-      tmp := strings.Trim(url,"/")
-      orderIdConv,err := strconv.ParseUint(tmp,10,64)
-      if err != nil{
-        http.Error(w,"failed to convert URL Path in uint",http.StatusInternalServerError)
-      }
-      amountBytes,err := getProductAmount(uint(orderIdConv))
-      amountBytesJson,err := json.Marshal(amountBytes)
-    
-      w.Write(amountBytesJson)
-      return 
-    
-
-}
-func main (){
-  http.HandleFunc("/",productHandler)
-	log.Fatal(http.ListenAndServe(":8090", nil))
+  productAmount,err := getProductAmount()
+  if err != nil {
+    log.Fatal(err)
+  }
+  body,err := json.Marshal(productAmount)
+  if err != nil {
+    log.Fatal(err)
+  }
+  err = channel.Publish(
+    "",
+    q.Name,
+    false,
+    false,
+    amqp.Publishing{
+      ContentType:"text/plain",
+      Body:       []byte(body),
+    })
+    if err != nil {
+      log.Fatal(err)
+    }
+    log.Printf("[x] Sent %s",body)
+  
 }
 
 
