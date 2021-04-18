@@ -7,7 +7,8 @@ import (
   "encoding/json"
   "time"
   "github.com/streadway/amqp"
-//  "strconv"
+  "strconv"
+
 )
 func connectToDataBase()(db *gorm.DB,err error){
   dsn := "host=localhost user=postgres password=123 dbname=warehouse port=5432 sslmode=disable"
@@ -32,13 +33,12 @@ type Product struct {
 // a method to get product amount 
 
 
-func getProductAmount()(product []*Product,err error){
-
+func getProductAmount(orderId uint)(product []*Product,err error){
  db,err := connectToDataBase()
   if err != nil {
     return nil,err
   }
-  db.Model(&Product{}).Select("products.id,products.amount").Scan(&product)
+  db.Model(&Product{}).Select("products.id,products.amount").Where("products.id = ?",orderId).Scan(&product)
   if db.Error != nil {
     return nil, db.Error
   }
@@ -96,13 +96,15 @@ func main() {
 
         go func() {
                 for d := range msgs {
-                        n := d.Body
+                        //n := d.Body
                         if err != nil {
                         log.Fatal(err)
                         }
 
-                        log.Printf(" [.] %v", n)
-                        response,err := getProductAmount()
+                        strUint,err := strconv.ParseUint(string(d.Body),10,32)
+                        
+                        
+                        response,err := getProductAmount(uint(strUint))
                         if err != nil {
                         log.Fatal(err)
                         }

@@ -4,11 +4,10 @@ import (
   "gorm.io/gorm"
   "gorm.io/driver/mysql"
   "time"
-/*  "strconv"
-  "net/http"
-  "io/ioutil" */
+  "strconv"
   "log"
   "github.com/streadway/amqp"
+  "os"
 )
 
 
@@ -50,6 +49,7 @@ type InfoOrderProduct struct {
   ProductID uint
   Code string
   Price uint
+  Amount uint
 }
   
 //func to connect to a database 
@@ -69,8 +69,13 @@ func getInfoOrderById(orderID uint)(infoOrderProduct []*InfoOrderProduct,err err
   }
 
   db.Model(&OrderProduct{}).Select("order_products.order_id,order_products.product_id,products.code,products.price").Where("Order_id=?",orderID).Joins("join products on products.id = order_products.product_id").Scan(&infoOrderProduct)
-  log.Printf("requesting amount of %v",orderID)
-  getAmountOfProduct(orderID)
+  
+  prodAm,err := getAmountOfProduct(orderID)
+  if err != nil{
+    log.Fatalf("an error while getting amount of products: %s",err )
+  }
+
+  os.Stdout.Write(prodAm)
 
 
   return infoOrderProduct,nil
@@ -120,19 +125,15 @@ func getAmountOfProduct(orderId uint)(response []byte,err error){
        ContentType:   "text/plain",
        CorrelationId: "",  //TODO should type something here 
        ReplyTo:       q.Name,
-       Body:          response,
+       Body:          []byte(strconv.Itoa(1)),
                 })
                 if err != nil{
     log.Fatalf("failed to publish a message: %s",err)
                 }
                 for d := range msgs{
-                  res := d.Body
+                  response = d.Body
                   break
-
-                  log.Printf("the response in a for:  %s", res)
                 }
-
-        log.Fatalf("got a response %s", response)
       return 
 }
 
