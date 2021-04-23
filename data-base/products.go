@@ -7,7 +7,7 @@ import (
   "strconv"
   "log"
   "github.com/streadway/amqp"
-  "os"
+  "encoding/json"
 )
 
 
@@ -70,17 +70,25 @@ func getInfoOrderById(orderID uint)(infoOrderProduct []*InfoOrderProduct,err err
 
   db.Model(&OrderProduct{}).Select("order_products.order_id,order_products.product_id,products.code,products.price").Where("Order_id=?",orderID).Joins("join products on products.id = order_products.product_id").Scan(&infoOrderProduct)
   
-  prodAm,err := getAmountOfProduct(orderID)
+  for i, v:= range infoOrderProduct{
+    product := infoOrderProduct[i].ProductID
+    prodAm,err := getAmountOfProduct(int(product))
   if err != nil{
-    log.Fatalf("an error while getting amount of products: %s",err )
+    log.Fatalf("an error while getting amount of products: %s and v= %v",err,v )
   }
-
-  os.Stdout.Write(prodAm)
-
-
+  var productAmount[] struct {
+    ID uint
+    Amount uint
+  }
+   err = json.Unmarshal(prodAm,&productAmount)
+   if err != nil {
+     log.Fatalf("an error while unmarshal: %s ",err)
+   }
+   infoOrderProduct[i].Amount = productAmount[0].Amount
+  }
   return infoOrderProduct,nil
 }
-func getAmountOfProduct(orderId uint)(response []byte,err error){
+func getAmountOfProduct(ProductId int)(response []byte,err error){
   conn,err := amqp.Dial("amqp://guest:guest@localhost:5672/")
   if err != nil{
     log.Fatalf("error to connect: %s", err)
@@ -125,7 +133,7 @@ func getAmountOfProduct(orderId uint)(response []byte,err error){
        ContentType:   "text/plain",
        CorrelationId: "",  //TODO should type something here 
        ReplyTo:       q.Name,
-       Body:          []byte(strconv.Itoa(1)),
+       Body:          []byte(strconv.Itoa(ProductId)),
                 })
                 if err != nil{
     log.Fatalf("failed to publish a message: %s",err)

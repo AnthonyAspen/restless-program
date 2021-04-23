@@ -100,8 +100,10 @@ func main() {
                         if err != nil {
                         log.Fatal(err)
                         }
+                      
 
                         strUint,err := strconv.ParseUint(string(d.Body),10,32)
+                        log.Printf("got an d.Body(the value is convertd to uint):%v",strUint)
                         
                         
                         response,err := getProductAmount(uint(strUint))
