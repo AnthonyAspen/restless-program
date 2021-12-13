@@ -8,6 +8,7 @@ import (
   "log"
   "github.com/streadway/amqp"
   "encoding/json"
+  "os"
 )
 
 
@@ -80,6 +81,7 @@ func getInfoOrderById(orderID uint)(infoOrderProduct []*InfoOrderProduct,err err
     ID uint
     Amount uint
   }
+   os.Stdout.Write(prodAm)
    err = json.Unmarshal(prodAm,&productAmount)
    if err != nil {
      log.Fatalf("an error while unmarshal: %s ",err)
